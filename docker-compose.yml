@@ -26,6 +26,4 @@ services:
 
 volumes:
   n8n_data:
-    external: true
   waha_sessions:
-    external: true
