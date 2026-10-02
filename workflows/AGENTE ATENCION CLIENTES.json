@@ -1,0 +1,773 @@
+{
+  "name": "AGENTE ATENCION CLIENTES",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Mensaje del cliente: {{ $('Webhook').item.json.body.payload.body }}\nTeléfono: {{ $('Webhook').item.json.body.payload._data.key.remoteJidAlt }}\nHora actual: {{ $now.setZone('America/Monterrey').toFormat('yyyy-MM-dd HH:mm') }}",
+        "options": {
+          "systemMessage": "# IDENTIDAD Y ROL\n¡Hola! Soy Rayito, tu asistente virtual de atención técnica y operativa de Monterrey Solar. Mi objetivo es ayudarte de forma rápida y amable. \n\nClasifico dinámicamente tus necesidades, analizo tanto tus mensajes de texto como las imágenes que envíes (fotografías de inversores, pantallas con errores, luces LED o recibos), te guío en descartes lógicos cuando aplica y canalizo tu solicitud al equipo correspondiente de forma precisa.\n\nREGLA DE ORO: Sé directo y eficiente. Tienes estrictamente prohibido alargar la conversación o hacer un interrogatorio eterno. Analiza la intención real y el contenido de las imágenes enviadas, ve al grano, mantén un tono cálido y empático, y haz UNA SOLA pregunta o indicación a la vez para obtener la información necesaria sin trabarte.\n\n---\n\n# ADAPTABILIDAD, FORMATO Y TONO (ANTI-ROBOT)\n* Conversación ágil y al grano: Tienes ESTRICTAMENTE PROHIBIDO enviar bloques de texto gigantes (\"biblias\"). Usa oraciones breves, directas y cordiales.\n* Tono empático y Manejo de Crisis: Saluda siempre con calidez. Si el cliente está molesto, valida su frustración (\"Entiendo perfecto tu molestia, vamos a solucionarlo\"). Si exige hablar con un humano, NO lo obligues a hacer pruebas; recaba su nombre, pídele el problema brevemente para dar contexto al equipo, y escala el caso.\n* Cero tecnicismos: Explica todo de forma cotidiana (\"Inversor\" -> \"caja del sistema\"; \"Pastilla\" -> \"palanquita del centro de carga\"; \"Led\" -> \"foquito\").\n* Cero Precios: Tienes estrictamente prohibido dar costos o cotizaciones.\n\n---\n\n# REGISTRO INICIAL DE CONTACTO (¡CRÍTICO Y SILENCIOSO!)\nEn tu primera interacción con el cliente (el inicio de la conversación), preséntate amablemente y captura inmediatamente su número de teléfono. \n* Limpieza Obligatoria: Toma la variable del teléfono, quita cualquier terminación como @s.whatsapp.net o @c.us y deja SOLO los dígitos numéricos.\n* Acción: EJECUTA INMEDIATAMENTE la herramienta gestionar_cliente proporcionando únicamente el teléfono limpio (si la herramienta exige un nombre, envíalo como \"Pendiente\"). Haz esto de forma silenciosa mientras respondes su saludo inicial.\n\n---\n\n# REGLA ESTRICTA DE HORARIO LABORAL Y EXIGENCIA HUMANA\nLee la variable \"Hora actual\". El horario de atención humana es de Lunes a Vertes de 9:00 AM a 6:00 PM (Hora Monterrey).\n* Manejo fuera de horario: Si un cliente exige afuerza hablar con una persona y es fuera de horario laboral o fin de semana, avísale amablemente que en este momento el personal humano no está laborando, pero que tú estás ahí para atenderlo. Ofrécele generar un reporte para que el equipo de atención a clientes lo contacte a primera hora del siguiente día hábil, PERO indícale que primero necesitas que te detalle el problema o te envíe foto para poder crear el registro.\n* Secuencia de Registro (¡CRÍTICO!): NUNCA le digas al usuario que su reporte ya fue generado o canalizado si no has ejecutado previamente la herramienta en la base de datos.\n* Manejo de Insistencia (Post-Registro): Si el usuario sigue exigiendo atención DESPUÉS de que ya escalaste su problema en la base de datos, NO generes un ticket nuevo. Solo tranquilízalo confirmando que su reporte ya está registrado y repite la promesa de contacto según el horario (a la brevedad vs. siguiente día hábil).\n\n---\n\n# EVALUACIÓN DINÁMICA DE INTENCIÓN, IMÁGENES Y DIAGNÓSTICO\n\n### 1. Fallas Técnicas (Luces, Códigos de Error y Pantallas)\n* Análisis Profundo de Imágenes: Si el cliente envía una foto o captura de pantalla del inversor, medidor o tablero, analiza detalladamente la imagen para identificar colores de luces LED (rojas/amarillas/verdes), códigos de error escritos en pantalla o anomalías físicas. Úsalo para saber exactamente qué responder o qué guía darle de forma sencilla.\n* Límite de Pruebas Caseras: Identifica si el problema es solucionable por el usuario tras ver la imagen. Si el error indica falla interna o requiere visita técnica, NO pidas pruebas inútiles; recaba evidencias y escala de inmediato.\n\n### 2. Solicitudes Administrativas o de Estatus (CFE, Instalaciones)\n* Acción: Preguntas por avances de obra, fechas o trámites. Si envían foto de recibos o documentos, analízalos para extraer datos clave. No inventes fechas. Recaba nombre, entiende su duda específica y escala al equipo de atención a clientes. \n\n### 3. Gestión de Accesos (App de Monitoreo)\n* Acción: Olvido de contraseña. Ofrece la recuperación autónoma (\"Olvidé mi contraseña\"). Si requiere soporte de la empresa, recaba nombre/correo y escala.\n\n---\n\n# MATRIZ DINÁMICA DE PRIORIDAD PARA TICKETS\n* ALTA: Riesgo físico visualizado en fotos/texto, olor a quemado, ruidos anómalos, chispas. Inversor apagado a pleno sol. Clientes extremadamente molestos exigiendo atención.\n* MEDIA: Demoras graves en estatus. Falla de generación intermitente. Problemas de Wi-Fi persistentes que requieren visita.\n* BAJA: Dudas simples (\"¿Cuándo instalan?\", \"¿Qué significa este dato en la app?\"), recuperación de contraseñas, o seguimiento rutinario de trámites.\n\n---\n\n# PROTOCOLO DE HERRAMIENTAS Y BASE DE DATOS\n\n1. Soporte técnico sobre fallas:\n   * Ejecuta buscar_solucion_previa. Si hay un registro útil basado en el diagnóstico del texto o la imagen, aplícalo de forma concisa y añade [Ref: X].\n   * Si el usuario confirma que la solución funcionó: ejecuta sumar_exito_solucion o registrar_nueva_solucion.\n2. Trámites, dudas, o exigencia de humano: Salta el paso anterior y procede directamente al flujo de escalamiento.\n\n---\n\n# FLUJO RÁPIDO DE ESCALAMIENTO Y TICKETS\n\nVe directo al punto sin alargar el chat. Sigue este orden:\n\n* Paso 1: Identificación rápida: Solicita el NOMBRE COMPLETO de forma natural y amable. EJECUTA NUEVAMENTE gestionar_cliente usando el teléfono limpio (solo dígitos) y el nombre que te proporcionó el cliente. Esto actualizará su registro y te devolverá el cliente_id definitivo.\n* Paso 2: Dinámica Inteligente de Evidencias (Solo si es técnico): Solicita únicamente lo faltante (ej. si ya mandó foto del inversor pero falta el recibo, pídele solo el recibo). Si el usuario tarda o no puede, acéptalo con flexibilidad y avanza para no trabar la atención. (Si es trámite, queja o app, omite este paso por completo).\n* Paso 3: Creación del Ticket de Escalamiento: Una vez recopilada la información y analizadas las evidencias visuales, EJECUTA INMEDIATAMENTE crear_ticket_escalamiento redactando el Contexto (Tipo de Solicitud, Detalle del análisis visual/texto, Acciones Realizadas, Estado de Evidencias y Área Destino).\n* Paso 4: Mensaje Final de Confirmación: SOLO DESPUÉS de ejecutar la herramienta, despídete confirmando que su reporte quedó registrado. \n  - Manejo de Prioridades: Prohibido decirle al cliente que su caso es de \"prioridad baja o media\". Habla de forma general (\"Tu reporte ya está registrado\"). Solo si es Prioridad Alta, menciónalo con empatía para tranquilizarlo.\n  - Horario: Si es horario laboral, diles que se contactarán a la brevedad; si es fuera de horario, a primera hora del siguiente día hábil.\n  - ESTRICTAMENTE PROHIBIDO COMPARTIRLE EL FOLIO.\n\n---\n\n# GUARDRAILS \n* NUNCA solicites abrir cajas, manipular cableado o realizar maniobras peligrosas."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        144,
+        -80
+      ],
+      "id": "b64453ee-be64-4bcb-b78e-c4ad759a2599",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {
+          "maxTokens": 300,
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        48,
+        192
+      ],
+      "id": "f40178b5-2be7-471a-9c12-4bf7fa89f79e",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "AEoPPLdQ1w6Ug8G0",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://waha:3000/api/sendText",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "mty_solar_123"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  JSON.stringify({\n    session: \"default\",\n    chatId: $('Webhook').item.json.body.payload.from,\n    text: $json.output\n  })\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        512,
+        -128
+      ],
+      "id": "7e25dd3c-4f05-4383-be7e-39a166f73c05",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook').item.json.body.payload.from || $('Webhook').item.json.body.payload.chatId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        208,
+        192
+      ],
+      "id": "d967f99d-820c-4786-9158-6d6f6bd0bdb1",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "cd133f99-b0e6-42e1-b3f5-2f9ea1007839",
+              "leftValue": "={{ $('Webhook').item.json.body.payload.fromMe }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "a6d9199b-cd92-45a1-bfbf-5bb205288a79",
+              "leftValue": "={{ $('Webhook').item.json.body.payload.from }}",
+              "rightValue": "@g.us",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "2d4ed31d-7b15-49ad-97c5-79e68aa0bc4a",
+              "leftValue": "={{ ['7711205910', '4831008671', '8119042174', '8126314868'].some(num => (($('Webhook').item.json.body?.payload?._data?.key?.remoteJidAlt || '') + ($('Webhook').item.json.body?.payload?._data?.key?.participantAlt || '') + ($('Webhook').item.json.body?.payload?.from || '')).includes(num)) }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -288,
+        32
+      ],
+      "id": "5169eb9e-0c19-4095-aeb0-4fadf0f8d189",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-inbound",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1328,
+        64
+      ],
+      "id": "b8f31d91-fcdc-4a33-a5f5-210656407f1a",
+      "name": "Webhook",
+      "webhookId": "e73bb25d-5a4d-45a0-be28-66b1c51dc4dd"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c85bb0c3-7c4d-4474-939c-2e25aafba43d",
+              "leftValue": "={{ Math.floor(Date.now() / 1000) - $('Webhook').item.json.body.payload.timestamp }}",
+              "rightValue": 120,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -64,
+        -32
+      ],
+      "id": "ecca4378-a31a-4b0d-975e-4fa425683503",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "08df8861-5db1-43b5-86b7-703a2f4da9a7",
+              "leftValue": "={{ $json.body.payload.fromMe }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -960,
+        -512
+      ],
+      "id": "7e70620b-0123-4125-b651-1e54f9d399cf",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nconst item = $input.first().json;\n\n// Busca payload en item.body.payload o directamente en item.payload\nconst data = item.body?.payload || item.payload || item;\nconst chatId = data.chatId || data.from || '';\nconst telefono = chatId.replace('@c.us', '');\n\nif (telefono) {\n  // Tiempo de pausa: 60 minutos en milisegundos\n  const tiempoPausa = 2 * 60 * 1000;\n  staticData[telefono] = Date.now() + tiempoPausa;\n}\n\n// Detiene el flujo para no responder al asesor\nreturn [];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -736,
+        -608
+      ],
+      "id": "82d2020b-f6f3-4a2d-9147-e1251edf6486",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nconst item = $input.first().json;\n\n// Busca payload en item.body.payload o directamente en item.payload\nconst data = item.body?.payload || item.payload || item;\nconst chatId = data.chatId || data.from || '';\nconst telefono = chatId.replace('@c.us', '');\n\nconst ahora = Date.now();\nconst tiempoDesbloqueo = staticData[telefono] || 0;\n\nlet pausado = false;\n\nif (ahora < tiempoDesbloqueo) {\n  pausado = true; // Sigue dentro de la hora de silencio\n} else {\n  delete staticData[telefono]; // Limpia la memoria si ya expiró\n}\n\nreturn [{\n  json: {\n    ...item,\n    telefono: telefono,\n    bot_pausado: pausado\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -736,
+        -432
+      ],
+      "id": "14d6e667-24c8-4b9d-ba48-c2ab075fbf92",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "6ec15773-f763-47b5-9f4d-fb2d5f994bde",
+              "leftValue": "={{ $json.bot_pausado }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -480,
+        -512
+      ],
+      "id": "7a886f19-593b-4f74-8806-25e0091e0798",
+      "name": "If3"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Úsala ÚNICAMENTE cuando el cliente confirme que la solución que sacaste de la base de datos sí le funcionó. Sirve para sumar 1 al contador de éxitos.",
+        "operation": "executeQuery",
+        "query": "UPDATE soluciones_exitosas \nSET veces_resuelto = veces_resuelto + 1 \nWHERE id_solucion = {{ $fromAI(\"id_solucion\", \"El ID numérico de la solución que fue exitosa\", \"number\") }};",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySqlTool",
+      "typeVersion": 2.5,
+      "position": [
+        816,
+        48
+      ],
+      "id": "0b4e4cef-c09f-4666-8f46-fb7ebfb40ed0",
+      "name": "sumar_exito_solucion",
+      "credentials": {
+        "mySql": {
+          "id": "kqR1ikm3RpvCJuAq",
+          "name": "MySQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Úsala cuando le diste al cliente una solución de descarte (ej. reiniciar pastillas) que NO estaba en la base de datos, pero que SÍ le resolvió el problema.",
+        "operation": "executeQuery",
+        "query": "INSERT INTO soluciones_exitosas (problema, palabras_clave, solucion, veces_resuelto) \nVALUES (\n  '{{ $fromAI(\"problema\", \"Breve descripción del problema reportado\", \"string\") }}',\n  '{{ $fromAI(\"palabras_clave\", \"Palabras clave separadas por comas\", \"string\") }}',\n  '{{ $fromAI(\"solucion\", \"Pasos detallados de la solución que funcionó\", \"string\") }}',\n  1\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySqlTool",
+      "typeVersion": 2.5,
+      "position": [
+        624,
+        96
+      ],
+      "id": "324f86e1-5cb0-4735-9604-879328285051",
+      "name": "registrar_nueva_solucion",
+      "credentials": {
+        "mySql": {
+          "id": "kqR1ikm3RpvCJuAq",
+          "name": "MySQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Úsala ANTES de crear un ticket. Registra al cliente y devuelve su cliente_id. Si el cliente ya existe, solo actualiza su nombre.",
+        "operation": "executeQuery",
+        "query": "INSERT INTO clientes_soporte (telefono, nombre) \nVALUES (\n  '{{ $fromAI(\"telefono\", \"Número de WhatsApp del cliente\", \"string\") }}', \n  '{{ $fromAI(\"nombre\", \"Nombre del cliente, o dejar en blanco si no se tiene\", \"string\") }}'\n) \nON DUPLICATE KEY UPDATE nombre = COALESCE(NULLIF(VALUES(nombre), ''), nombre);\n\nSELECT cliente_id FROM clientes_soporte WHERE telefono = '{{ $fromAI(\"telefono\", \"Número de WhatsApp del cliente\", \"string\") }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySqlTool",
+      "typeVersion": 2.5,
+      "position": [
+        384,
+        368
+      ],
+      "id": "9a9cdbfe-7a1a-4f27-babd-25240bc4f4d6",
+      "name": "gestionar_cliente",
+      "credentials": {
+        "mySql": {
+          "id": "kqR1ikm3RpvCJuAq",
+          "name": "MySQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Úsala para crear un ticket de soporte cuando el problema deba ser escalado al equipo humano.",
+        "operation": "executeQuery",
+        "query": "INSERT INTO tickets_soporte (cliente_id, folio, prioridad, contexto, estado)\nVALUES (\n  {{ $fromAI(\"cliente_id\", \"El ID numérico devuelto por la herramienta gestionar_cliente\", \"number\") }},\n  '{{ $fromAI(\"folio\", \"Folio único generado por ti, ejemplo REP-503\", \"string\") }}',\n  '{{ $fromAI(\"prioridad\", \"Nivel de prioridad: Alta, Media o Baja\", \"string\") }}',\n  '{{ $fromAI(\"contexto\", \"Resumen técnico de la falla, pruebas realizadas y si hay evidencias\", \"string\") }}',\n  'Pendiente'\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySqlTool",
+      "typeVersion": 2.5,
+      "position": [
+        560,
+        368
+      ],
+      "id": "8b0bf480-40bc-4ab9-9b0a-fe61cd19df5d",
+      "name": "crear_ticket_escalamiento",
+      "credentials": {
+        "mySql": {
+          "id": "kqR1ikm3RpvCJuAq",
+          "name": "MySQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Busca en la base de datos si existe una solución previa registrada para el problema o código de error que reporta el cliente.",
+        "operation": "executeQuery",
+        "query": "SELECT id_solucion, problema, palabras_clave, solucion, veces_resuelto \nFROM soluciones_exitosas\nWHERE MATCH(texto_busqueda) AGAINST('{{ $fromAI(\"sintoma\", \"Síntoma o falla breve reportada por el usuario\", \"string\") }}' IN NATURAL LANGUAGE MODE)\n   OR texto_busqueda LIKE CONCAT('%', '{{ $fromAI(\"sintoma\", \"Síntoma o falla breve reportada por el usuario\", \"string\") }}', '%')\nORDER BY veces_resuelto DESC \nLIMIT 2;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySqlTool",
+      "typeVersion": 2.5,
+      "position": [
+        816,
+        304
+      ],
+      "id": "8c552311-1b4a-4d85-84ac-0d20c47d2a66",
+      "name": "buscar_solucion_previa",
+      "credentials": {
+        "mySql": {
+          "id": "kqR1ikm3RpvCJuAq",
+          "name": "MySQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "fbbf4143-0370-4572-82f9-9ff6c68b37a7",
+              "leftValue": "={{ $('Webhook').item.json.body.payload.fromMe }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1136,
+        48
+      ],
+      "id": "b379526a-e701-42eb-bbe5-0e28ba026e23",
+      "name": "If4"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT bot_pausado, pausado_hasta \nFROM clientes_soporte \nWHERE telefono = '{{ ($('Webhook').item.json.body.payload._data.key.remoteJidAlt || \"\").split(\"@\")[0] }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        -960,
+        192
+      ],
+      "id": "144eb089-ce01-44da-aed2-c55237004efc",
+      "name": "Execute a SQL query1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "mySql": {
+          "id": "kqR1ikm3RpvCJuAq",
+          "name": "MySQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE clientes_soporte \nSET bot_pausado = 1, pausado_hasta = DATE_ADD(NOW(), INTERVAL 30 MINUTE) \nWHERE telefono = '{{ ($('Webhook').item.json.body.payload._data.key.remoteJidAlt || \"\").split(\"@\")[0] }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        -928,
+        -16
+      ],
+      "id": "6680d738-2118-4b17-ab3f-768ab5afeb76",
+      "name": "apagar_bot",
+      "credentials": {
+        "mySql": {
+          "id": "kqR1ikm3RpvCJuAq",
+          "name": "MySQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2040ec7a-97a2-4efe-a246-c86eab39b16a",
+              "leftValue": "={{ $json.bot_pausado || 0 }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "bcf84d48-3f84-4c84-84d2-9f1477bbb2c4",
+              "leftValue": "={{ Math.floor(DateTime.fromSQL($json.pausado_hasta, { zone: 'America/Monterrey' }).toSeconds()) }}",
+              "rightValue": "={{ Math.floor($now.toSeconds()) }}",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -752,
+        160
+      ],
+      "id": "64d0d118-b5c2-43cd-9fa3-81f8be3993bf",
+      "name": "If5"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE clientes_soporte \nSET bot_pausado = 0, pausado_hasta = NULL \nWHERE telefono = '{{ ($('Webhook').item.json.body.payload._data.key.remoteJidAlt || \"\").split(\"@\")[0] }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        -544,
+        32
+      ],
+      "id": "ed9e581a-bc35-485b-91c1-fb8f29d5bd2e",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "mySql": {
+          "id": "kqR1ikm3RpvCJuAq",
+          "name": "MySQL account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "If3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If3": {
+      "main": [
+        []
+      ]
+    },
+    "sumar_exito_solucion": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "registrar_nueva_solucion": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gestionar_cliente": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "crear_ticket_escalamiento": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "buscar_solucion_previa": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If4": {
+      "main": [
+        [
+          {
+            "node": "apagar_bot",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Execute a SQL query1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query1": {
+      "main": [
+        [
+          {
+            "node": "If5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If5": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "23ced287-d9db-4ce8-9a19-0b2029e112c1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "db912482996738dbd084479c29f7f3a09434c7da6ad540077b17a237b22fac4a"
+  },
+  "nodeGroups": [],
+  "id": "KPAZk39t1SQ2xWth",
+  "tags": []
+}
