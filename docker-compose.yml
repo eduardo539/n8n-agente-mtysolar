@@ -1,0 +1,31 @@
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+  waha:
+    image: devlikeapro/waha:latest
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - WAHA_DASHBOARD_ENABLED=true
+      - WAHA_DASHBOARD_USERNAME=${WAHA_DASHBOARD_USERNAME}
+      - WAHA_DASHBOARD_PASSWORD=${WAHA_DASHBOARD_PASSWORD}
+      - WAHA_API_KEY=${WAHA_API_KEY}
+      - WHATSAPP_API_KEY=${WHATSAPP_API_KEY}
+      - WHATSAPP_DEFAULT_ENGINE=NOWEB
+    volumes:
+      - waha_sessions:/app/.sessions
+
+volumes:
+  n8n_data:
+    external: true
+  waha_sessions:
+    external: true
